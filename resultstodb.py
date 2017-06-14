@@ -84,6 +84,8 @@ def read_packets(packet_file, test=False):
     assert os.path.isfile(packet_file), 'Input packet file %s does not exist' % packet_file
     EXPECTED_COLUMNS = 10
 
+    processed_releases = set()
+
     with open(packet_file, 'r') as fh:
         reader = csv.reader(fh)
         for row in reader:
@@ -110,15 +112,20 @@ def read_packets(packet_file, test=False):
                 if(not test):
                     dbops.insert_transmission(release_id, data_type, timestamp, \
                                               domain=domain, tls_sni=tls_sni, ip_address=ip_address, port=port, is_tls=is_tls, payload=blob)
+                    processed_releases.add(release_id)
             except ValueError as e:
                 logging.error('ValueError for row %s, skipping' % str(row))
                 logging.exception(e)
 
                 continue
 
+    return processed_releases
+
 def read_perms(perms_file, test=False):
     assert os.path.isfile(perms_file), 'Input permissions file %s does not exist' % perms_file
     EXPECTED_COLUMNS = 5
+
+    processed_releases = set()
 
     with open(perms_file, 'r') as fh:
         reader = csv.reader(fh)
@@ -140,11 +147,19 @@ def read_perms(perms_file, test=False):
 
                 if(not test):
                     dbops.insert_permission(release_id, permission, timestamp, is_used=is_used)
+                    processed_releases.add(release_id)
             except ValueError as e:
                 logging.error('ValueError for row %s, skipping' % str(row))
                 logging.exception(e)
 
                 continue
+
+    return processed_releases
+
+def mark_as_tested(release_ids, test=False):
+    if(not test):
+        for release_id in release_ids:
+            dbops.update_release_tested(release_id)
 
 if __name__ == '__main__':
     args = _parse_args()
@@ -154,11 +169,17 @@ if __name__ == '__main__':
 
     _init_db(args.dbcreds)
 
+    processed_ids = set()
+
     packet_file = args.packetfile
     if(packet_file is not None):
-        read_packets(packet_file, test=args.test)
+        processed = read_packets(packet_file, test=args.test)
+        processed_ids.update(processed)
     
     perm_file = args.permfile
     if(perm_file is not None):
-        read_perms(perm_file, test=args.test)
+        processed = read_perms(perm_file, test=args.test)
+        processed_ids.update(processed)
+
+    mark_as_tested(processed_ids, test=args.test)
 
