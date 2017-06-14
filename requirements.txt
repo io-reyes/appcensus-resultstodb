@@ -1,1 +1,1 @@
--e git+https://github.com/io-reyes/dbops.git#egg=dbops
+-e git+https://github.com/io-reyes/appcensus-dbops.git#egg=dbops
