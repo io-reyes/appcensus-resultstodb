@@ -1,4 +1,3 @@
-import dbops
 import csv
 import argparse
 import ConfigParser
@@ -6,6 +5,8 @@ import logging
 import os
 import calendar
 import datetime
+
+from dbops import dbops
 
 def _parse_args():
     parser = argparse.ArgumentParser(description='Put parsed AppCensus test results into the database')
